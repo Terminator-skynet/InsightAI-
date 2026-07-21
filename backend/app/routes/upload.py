@@ -1,6 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import pandas as pd
 
+from app.services.gemini_service import generate_ai_insights
+import app.routes.chat as chat_route
+
 router = APIRouter()
 
 
@@ -14,7 +17,10 @@ async def upload_csv(file: UploadFile = File(...)):
             file.file.seek(0)
             df = pd.read_csv(file.file, encoding="latin1")
 
-        # Basic Information
+        # ==========================
+        # Basic Dataset Information
+        # ==========================
+
         rows = len(df)
         columns = len(df.columns)
         column_names = list(df.columns)
@@ -30,7 +36,10 @@ async def upload_csv(file: UploadFile = File(...)):
             2,
         )
 
+        # ==========================
         # Column Information
+        # ==========================
+
         column_info = []
 
         for col in df.columns:
@@ -39,10 +48,17 @@ async def upload_csv(file: UploadFile = File(...)):
                 "dtype": str(df[col].dtype),
                 "missing": int(df[col].isnull().sum()),
                 "unique": int(df[col].nunique()),
-                "sample": str(df[col].dropna().iloc[0]) if not df[col].dropna().empty else "N/A",
+                "sample": (
+                    str(df[col].dropna().iloc[0])
+                    if not df[col].dropna().empty
+                    else "N/A"
+                ),
             })
 
+        # ==========================
         # Numeric Statistics
+        # ==========================
+
         statistics = {}
 
         numeric_df = df.select_dtypes(include="number")
@@ -50,14 +66,16 @@ async def upload_csv(file: UploadFile = File(...)):
         if not numeric_df.empty:
             statistics = numeric_df.describe().round(2).to_dict()
 
+        # ==========================
         # Missing Values Per Column
-        missing_per_column = (
-            df.isnull()
-            .sum()
-            .to_dict()
-        )
+        # ==========================
 
+        missing_per_column = df.isnull().sum().to_dict()
+
+        # ==========================
         # Chart Data
+        # ==========================
+
         chart_data = {
             "data_types": [
                 {
@@ -78,8 +96,61 @@ async def upload_csv(file: UploadFile = File(...)):
             ],
         }
 
+        # ==========================
         # Preview
+        # ==========================
+
         preview = df.head(10).fillna("").to_dict(orient="records")
+
+        # ==========================
+        # AI Dataset Summary
+        # ==========================
+
+        dataset_summary = {
+            "rows": rows,
+            "columns": columns,
+            "column_names": column_names,
+            "numeric_columns": numeric_columns,
+            "categorical_columns": categorical_columns,
+            "missing_values": missing_values,
+            "duplicate_rows": duplicate_rows,
+            "memory_usage_mb": memory_usage,
+            "column_info": column_info,
+            "statistics": statistics,
+        }
+
+        ai_summary = generate_ai_insights(dataset_summary)
+
+        # ==========================
+        # Store Dataset Context
+        # (Used by /chat endpoint)
+        # ==========================
+
+        chat_route.dataset_context = f"""
+Dataset Overview
+
+Rows: {rows}
+Columns: {columns}
+
+Column Names:
+{', '.join(column_names)}
+
+Numeric Columns: {numeric_columns}
+Categorical Columns: {categorical_columns}
+
+Missing Values: {missing_values}
+Duplicate Rows: {duplicate_rows}
+
+Column Information:
+{column_info}
+
+Statistics:
+{statistics}
+"""
+
+        # ==========================
+        # Response
+        # ==========================
 
         return {
             "rows": rows,
@@ -102,6 +173,8 @@ async def upload_csv(file: UploadFile = File(...)):
             "chart_data": chart_data,
 
             "preview": preview,
+
+            "ai_summary": ai_summary,
         }
 
     except Exception as e:

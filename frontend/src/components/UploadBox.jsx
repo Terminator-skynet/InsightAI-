@@ -5,7 +5,7 @@ import DataPreview from "./DataPreview";
 import Charts from "./Charts";
 import AIInsights from "./AIInsights";
 import DataTable from "./DataTable";
-
+import ChatAI from "./ChatAI";
 
 export default function UploadBox() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -104,6 +104,7 @@ export default function UploadBox() {
           <DashboardCards data={data} />
           <Charts data={data} />
           <AIInsights data={data} />
+          <ChatAI data={data} />
           <DataTable data={data} />
         </>
       )}

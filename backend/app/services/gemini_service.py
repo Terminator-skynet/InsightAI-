@@ -8,8 +8,8 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-def generate_ai_insights(summary):
 
+def generate_ai_insights(summary):
     prompt = f"""
 You are a Senior Data Scientist.
 
@@ -30,6 +30,19 @@ Provide:
 
 Keep the response professional and concise.
 """
+
+    response = client.models.generate_content(
+        model="gemini-3.1-flash-lite",
+        contents=prompt,
+    )
+
+    return response.text
+
+
+def ask_gemini(prompt):
+    """
+    Generic Gemini function for chatbot.
+    """
 
     response = client.models.generate_content(
         model="gemini-3.1-flash-lite",
