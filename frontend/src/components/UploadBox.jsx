@@ -36,7 +36,7 @@ export default function UploadBox() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/upload",
+        "https://insightai-0s5z.onrender.com/upload",
         formData
       );
 

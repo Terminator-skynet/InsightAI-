@@ -13,7 +13,7 @@ export default function ChatAI() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/chat",
+        "https://insightai-0s5z.onrender.com/chat",
         {
           question: question,
         }
